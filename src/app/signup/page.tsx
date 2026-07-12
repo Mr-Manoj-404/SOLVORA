@@ -43,31 +43,37 @@ export default function SignupPage() {
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-5">
             <div>
-              <Label>Email</Label>
+              <Label className="mb-2 block text-base font-semibold text-white">
+                Email
+              </Label>
 
               <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-12 border-slate-600 bg-slate-800 text-lg text-white placeholder:text-slate-400 focus:border-cyan-400"
               />
             </div>
 
             <div>
-              <Label>Password</Label>
+             <Label className="mb-2 block text-base font-semibold text-white">
+                Password
+             </Label>
 
-              <Input
-                type="password"
-                placeholder="Create password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+             <Input
+             type="password"
+             placeholder="Create password"
+             value={password}
+             onChange={(e) => setPassword(e.target.value)}
+             className="h-12 border-slate-600 bg-slate-800 text-lg text-white placeholder:text-slate-400 focus:border-cyan-400"
+             />
             </div>
 
             <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
+            type="submit"
+            className="h-12 w-full bg-cyan-400 text-lg font-semibold text-black hover:bg-cyan-300"
+            disabled={loading}
             >
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
