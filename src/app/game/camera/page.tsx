@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { dataURLToBlob } from "@/services/camera";
 import { uploadGameImage } from "@/services/storage";
+import { createGameSession } from "@/services/game";
 
 import CameraView from "@/components/camera/CameraView";
 import ImagePreview from "@/components/camera/ImagePreview";
@@ -63,10 +64,9 @@ export default function CameraPage() {
 
     if (!ctx) return;
 
-    // Flip the image horizontally so it matches the mirrored preview
+    // Mirror captured image
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const image = canvas.toDataURL("image/png");
@@ -93,19 +93,36 @@ export default function CameraPage() {
         return;
       }
 
+      // Convert image to Blob
       const blob = dataURLToBlob(capturedImage);
 
+      // Upload to Storage
       const imageUrl = await uploadGameImage(blob, user.id);
 
       console.log("Image URL:", imageUrl);
 
-      alert("Image uploaded successfully!");
+      // Save game session
+      const session = await createGameSession({
+        userId: user.id,
+        imageUrl,
+        difficulty,
+      });
 
-      router.push("/dashboard");
+      console.log("Game Session:", session);
+
+      alert("Game Session Created Successfully!");
+
+      // Redirect to Puzzle Page
+      router.push("/game/puzzle");
     } catch (err) {
-      console.error(err);
-      alert("Failed to upload image.");
-    } finally {
+      console.error("Game Session Error:", err);
+      alert("Check the browser console (F12) for the full error.");
+      if (err instanceof Error) {
+         console.error("Error Message:", err.message);
+        }
+
+  console.log(err);
+}finally {
       setUploading(false);
     }
   }
@@ -155,7 +172,7 @@ export default function CameraPage() {
                     </p>
 
                     <p className="mt-2 text-slate-400">
-                      Please wait while your image is uploaded.
+                      Please wait while your image is being processed.
                     </p>
                   </div>
                 ) : (
