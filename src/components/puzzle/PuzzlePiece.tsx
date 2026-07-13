@@ -1,13 +1,27 @@
+import { PuzzlePiece as Piece } from "@/types/puzzle";
+
 type Props = {
-  number: number;
+  piece: Piece;
+  selected: boolean;
+  onClick: () => void;
 };
 
-export default function PuzzlePiece({ number }: Props) {
+export default function PuzzlePiece({
+  piece,
+  selected,
+  onClick,
+}: Props) {
   return (
-    <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-cyan-500 text-2xl font-bold text-black">
-
-      {number}
-
-    </div>
+    <img
+      src={piece.image}
+      alt=""
+      draggable={false}
+      onClick={onClick}
+      className={`cursor-pointer rounded-lg transition-all duration-200 ${
+        selected
+          ? "ring-4 ring-cyan-400 scale-95"
+          : "hover:scale-95"
+      }`}
+    />
   );
 }
