@@ -13,12 +13,15 @@ import {
 } from "@/services/puzzleEngine";
 
 import PuzzlePiece from "./PuzzlePiece";
+import PuzzleTimer from "./PuzzleTimer";
 import { PuzzlePiece as Piece } from "@/types/puzzle";
 
 export default function PuzzleBoard() {
   const [pieces, setPieces] = useState<Piece[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [moves, setMoves] = useState(0);
+  const [seconds, setSeconds] = useState(0);
+  const [gameSolved, setGameSolved] = useState(false);
 
   useEffect(() => {
     async function loadPuzzle() {
@@ -61,6 +64,17 @@ export default function PuzzleBoard() {
     loadPuzzle();
   }, []);
 
+  // Timer
+  useEffect(() => {
+    if (gameSolved) return;
+
+    const timer = setInterval(() => {
+      setSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [gameSolved]);
+
   function handlePieceClick(index: number) {
     if (selectedIndex === null) {
       setSelectedIndex(index);
@@ -80,12 +94,27 @@ export default function PuzzleBoard() {
 
     setPieces(updated);
     setSelectedIndex(null);
-    setMoves((prev) => prev + 1);
+
+    const newMoves = moves + 1;
+    setMoves(newMoves);
 
     if (isPuzzleSolved(updated)) {
+      setGameSolved(true);
+
       setTimeout(() => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+
         alert(
-          `🎉 Congratulations!\n\nPuzzle Solved in ${moves + 1} moves!`
+          `🎉 Congratulations!
+
+Puzzle Solved!
+
+⏱ Time: ${minutes}:${remainingSeconds
+            .toString()
+            .padStart(2, "0")}
+
+🔄 Moves: ${newMoves}`
         );
       }, 200);
     }
@@ -112,8 +141,14 @@ export default function PuzzleBoard() {
           Puzzle Board
         </h2>
 
-        <div className="rounded-xl bg-slate-800 px-4 py-2 text-lg">
-          Moves: <span className="font-bold">{moves}</span>
+        <div className="flex gap-4">
+
+          <PuzzleTimer seconds={seconds} />
+
+          <div className="rounded-xl bg-slate-800 px-4 py-2 text-lg">
+            🔄 Moves: <span className="font-bold">{moves}</span>
+          </div>
+
         </div>
 
       </div>
