@@ -1,51 +1,31 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-import {
-  startCamera,
-  stopCamera,
-} from "@/services/camera";
-
-import { useHandTracking } from "@/hooks/useHandTracking";
+import { memo } from "react";
 
 import CameraView from "@/components/camera/CameraView";
 import HandTracker from "@/components/hand/HandTracker";
 import HandCursor from "@/components/hand/HandCursor";
 
-export default function PuzzleCamera() {
-  const videoRef = useRef<HTMLVideoElement>(null);
+import { HandData } from "@/types/hand";
 
-  const {
-    hands,
-    isTracking,
-  } = useHandTracking(videoRef);
+interface PuzzleCameraProps {
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  hands: HandData[];
+  isTracking: boolean;
+  cameraReady: boolean;
+}
 
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-
-    async function initialize() {
-      if (!videoRef.current) return;
-
-      try {
-        stream = await startCamera(videoRef.current);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    initialize();
-
-    return () => {
-      stopCamera(stream);
-    };
-  }, []);
-
+function PuzzleCamera({
+  videoRef,
+  hands,
+  isTracking,
+  cameraReady,
+}: PuzzleCameraProps) {
   return (
-    <div className="w-full max-w-sm rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 shadow-xl">
+    <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-xl">
       <CameraView
         videoRef={videoRef}
-        isActive={true}
+        isActive={cameraReady}
       >
         <HandTracker
           hands={hands}
@@ -64,10 +44,16 @@ export default function PuzzleCamera() {
       </CameraView>
 
       <div className="border-t border-slate-700 p-3 text-center">
-        <p className="text-sm text-cyan-400 font-semibold">
+        <p className="text-sm font-semibold text-cyan-400">
           Live Hand Tracking
+        </p>
+
+        <p className="mt-1 text-xs text-slate-400">
+          {hands.length} Hand{hands.length !== 1 ? "s" : ""} Detected
         </p>
       </div>
     </div>
   );
 }
+
+export default memo(PuzzleCamera);
