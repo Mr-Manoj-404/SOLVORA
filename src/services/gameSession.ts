@@ -13,3 +13,16 @@ export async function getLatestGameSession(userId: string) {
 
   return data;
 }
+
+export async function completeGameSession(sessionId: string) {
+  const { error } = await supabase
+    .from("game_sessions")
+    .update({
+      status: "completed",
+    })
+    .eq("id", sessionId);
+
+  if (error) {
+    throw error;
+  }
+}

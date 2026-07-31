@@ -4,14 +4,27 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
-import { dataURLToBlob } from "@/services/camera";
+
+import {
+  startCamera,
+  stopCamera,
+  captureFrame,
+} from "@/services/camera";
+
+import { dataURLToBlob } from "@/utils/dataURLToBlob";
+
 import { uploadGameImage } from "@/services/storage";
 import { createGameSession } from "@/services/game";
+
+import { useHandTracking } from "@/hooks/useHandTracking";
 
 import CameraView from "@/components/camera/CameraView";
 import ImagePreview from "@/components/camera/ImagePreview";
 import CaptureButton from "@/components/camera/CaptureButton";
 import CameraControls from "@/components/camera/CameraControls";
+
+import HandTracker from "@/components/hand/HandTracker";
+import HandCursor from "@/components/hand/HandCursor";
 
 export default function CameraPage() {
   const searchParams = useSearchParams();
@@ -25,53 +38,50 @@ export default function CameraPage() {
   const [error, setError] = useState("");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+
+const {
+  hands,
+  isTracking,
+} = useHandTracking(videoRef);
 
   useEffect(() => {
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-        });
+    let stream: MediaStream | null = null;
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch {
+    async function initializeCamera() {
+      try {
+        if (!videoRef.current) return;
+
+        stream = await startCamera(videoRef.current);
+
+        setCameraReady(true);
+      } catch (error) {
+        console.error(error);
         setError("Camera permission denied.");
       }
     }
 
-    startCamera();
+    initializeCamera();
 
     return () => {
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
-      }
+      stopCamera(stream);
     };
   }, []);
 
   function captureImage() {
     if (!videoRef.current || !canvasRef.current) return;
 
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
+    try {
+      const image = captureFrame(
+        videoRef.current,
+        canvasRef.current
+      );
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) return;
-
-    // Mirror captured image
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const image = canvas.toDataURL("image/png");
-
-    setCapturedImage(image);
+      setCapturedImage(image);
+    } catch (error) {
+      console.error(error);
+      alert("Unable to capture image.");
+    }
   }
 
   function retakePhoto() {
@@ -93,15 +103,15 @@ export default function CameraPage() {
         return;
       }
 
-      // Convert image to Blob
       const blob = dataURLToBlob(capturedImage);
 
-      // Upload to Storage
-      const imageUrl = await uploadGameImage(blob, user.id);
+      const imageUrl = await uploadGameImage(
+        blob,
+        user.id
+      );
 
       console.log("Image URL:", imageUrl);
 
-      // Save game session
       const session = await createGameSession({
         userId: user.id,
         imageUrl,
@@ -112,17 +122,17 @@ export default function CameraPage() {
 
       alert("Game Session Created Successfully!");
 
-      // Redirect to Puzzle Page
       router.push("/game/puzzle");
     } catch (err) {
       console.error("Game Session Error:", err);
-      alert("Check the browser console (F12) for the full error.");
-      if (err instanceof Error) {
-         console.error("Error Message:", err.message);
-        }
 
-  console.log(err);
-}finally {
+      if (err instanceof Error) {
+        console.error("Error Message:", err.message);
+        alert(err.message);
+      } else {
+        alert("Something went wrong.");
+      }
+    } finally {
       setUploading(false);
     }
   }
@@ -130,7 +140,6 @@ export default function CameraPage() {
   return (
     <main className="min-h-screen bg-slate-950 p-8 text-white">
       <div className="mx-auto max-w-5xl">
-
         <h1 className="mb-2 text-center text-4xl font-bold text-cyan-400">
           Camera
         </h1>
@@ -143,9 +152,8 @@ export default function CameraPage() {
         </p>
 
         <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-
           {error ? (
-            <p className="text-center text-red-400 text-lg">
+            <p className="text-center text-lg text-red-400">
               {error}
             </p>
           ) : (
@@ -153,7 +161,25 @@ export default function CameraPage() {
               {capturedImage ? (
                 <ImagePreview image={capturedImage} />
               ) : (
-                <CameraView videoRef={videoRef} />
+                <CameraView
+                  videoRef={videoRef}
+                  isActive={cameraReady}
+                >
+                  <HandTracker
+                  hands={hands}
+                  width={1280}
+                  height={720}
+                  />
+                  
+                  {hands.length > 0 && (
+                    <HandCursor
+                    x={hands[0].cursor.x}
+                    y={hands[0].cursor.y}
+                    visible={isTracking}
+                    pinching={hands[0].isPinching}
+                    />
+                    )}
+                </CameraView>
               )}
 
               <canvas
@@ -162,9 +188,11 @@ export default function CameraPage() {
               />
 
               <div className="mt-8 flex justify-center gap-4">
-
                 {!capturedImage ? (
-                  <CaptureButton onCapture={captureImage} />
+                  <CaptureButton
+                    onCapture={captureImage}
+                    disabled={!cameraReady}
+                  />
                 ) : uploading ? (
                   <div className="text-center">
                     <p className="text-xl font-bold text-cyan-400">
@@ -181,14 +209,10 @@ export default function CameraPage() {
                     onContinue={continueGame}
                   />
                 )}
-
               </div>
-
             </>
           )}
-
         </div>
-
       </div>
     </main>
   );
