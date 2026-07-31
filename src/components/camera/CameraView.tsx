@@ -41,7 +41,8 @@ function CameraView({
           </div>
         )}
 
-        <div className="pointer-events-none absolute inset-0 z-20">
+        {/* Mirror overlays exactly like the video */}
+        <div className="pointer-events-none absolute inset-0 z-20 -scale-x-100">
           {children}
         </div>
       </div>

@@ -98,12 +98,33 @@ export function useHandTracking(
             pinchStrength,
             cursor: {
               x: indexTip.x,
-              y: indexTip.y,
+              y:1-indexTip.y,
             },
           });
-                  });
+        });
 
         setHands(detectedHands);
+
+        // ===========================
+        // DEBUG LOGS
+        // ===========================
+        console.clear();
+
+        console.log("====================================");
+        console.log("Hands Detected:", detectedHands.length);
+        console.log("Tracking:", true);
+
+        if (detectedHands.length > 0) {
+          console.log("First Hand:", detectedHands[0].side);
+          console.log("Cursor:", detectedHands[0].cursor);
+          console.log("Index Tip:", detectedHands[0].landmarks[8]);
+          console.log("Thumb Tip:", detectedHands[0].landmarks[4]);
+          console.log("Pinching:", detectedHands[0].isPinching);
+          console.log("Pinch Strength:", detectedHands[0].pinchStrength);
+        }
+
+        console.log("====================================");
+
         setIsTracking(true);
       } else {
         setHands([]);

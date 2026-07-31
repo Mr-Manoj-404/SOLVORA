@@ -33,10 +33,10 @@ function PuzzleCamera({
           height={720}
         />
 
-        {hands.length > 0 && (
+        {hands.length > 0 && hands[0].landmarks.length > 8 && (
           <HandCursor
-            x={hands[0].cursor.x}
-            y={hands[0].cursor.y}
+            x={hands[0].landmarks[8].x}
+            y={hands[0].landmarks[8].y}
             visible={isTracking}
             pinching={hands[0].isPinching}
           />

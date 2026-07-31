@@ -76,9 +76,9 @@ function HandTracker({
               return (
                 <line
                   key={`line-${handIndex}-${index}`}
-                  x1={(1 - p1.x) * width}
+                  x1={p1.x * width}
                   y1={p1.y * height}
-                  x2={(1 - p2.x) * width}
+                  x2={p2.x * width}
                   y2={p2.y * height}
                   stroke={lineColor}
                   strokeWidth={3}
@@ -90,7 +90,7 @@ function HandTracker({
             {hand.landmarks.map((point, index) => (
               <circle
                 key={`point-${handIndex}-${index}`}
-                cx={(1 - point.x) * width}
+                cx={point.x * width}
                 cy={point.y * height}
                 r={index === 8 ? 8 : 5}
                 fill={index === 8 ? pointColor : "#ffffff"}
