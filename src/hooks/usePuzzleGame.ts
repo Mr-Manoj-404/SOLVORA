@@ -14,7 +14,10 @@ import { splitImage } from "@/services/imageSplitter";
 import {
   createPuzzlePieces,
   shufflePuzzle,
-  swapPieces,
+  movePiece,
+  startDragging,
+  stopDragging,
+  snapPiece,
   isPuzzleSolved,
 } from "@/services/puzzleEngine";
 
@@ -36,6 +39,8 @@ export function usePuzzleGame() {
   const [imageUrl, setImageUrl] = useState("");
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [draggingId, setDraggingId] =
+  useState<number | null>(null);
 
   const [moves, setMoves] = useState(0);
   const [seconds, setSeconds] = useState(0);
@@ -105,10 +110,15 @@ export function usePuzzleGame() {
       if (cancelled) return;
 
       const original =
-        createPuzzlePieces(imagePieces);
-
+      createPuzzlePieces(
+        imagePieces,
+        gridSize
+      );
       const shuffled =
-        shufflePuzzle([...original]);
+      shufflePuzzle(
+        [...original],
+        gridSize
+      );
 
       setOriginalPieces(original);
       setPieces(shuffled);
@@ -141,86 +151,128 @@ export function usePuzzleGame() {
     return () => clearInterval(timer);
   }, [gameSolved, loading]);
 
-  const handlePieceClick = useCallback(
-    async (index: number) => {
-      if (loading || gameSolved) return;
+  const handleDragStart = useCallback(
+  (id: number) => {
+    setDraggingId(id);
 
-      if (selectedIndex === null) {
-        setSelectedIndex(index);
-        return;
-      }
+    setPieces((prev) =>
+      startDragging(prev, id)
+    );
+  },
+  []
+);
 
-      if (selectedIndex === index) {
-        setSelectedIndex(null);
-        return;
-      }
+const handleDragMove = useCallback(
+  (
+    id: number,
+    x: number,
+    y: number
+  ) => {
+    setPieces((prev) =>
+      movePiece(prev, id, x, y)
+    );
+  },
+  []
+);
 
-      const updated = swapPieces(
-        pieces,
-        selectedIndex,
-        index
-      );
+const handleDragEnd = useCallback(
+  async (
+    id: number,
+    gridSize: number
+  ) => {
 
-      setPieces(updated);
-      setSelectedIndex(null);
+    setDraggingId(null);
 
-      const newMoves = moves + 1;
+    let solved = false;
 
-      setMoves(newMoves);
+    let updatedPieces: Piece[] = [];
 
-      const liveScore = calculateScore(
+    setPieces((prev) => {
+
+      updatedPieces = prev.map((piece) => {
+
+        if (piece.id !== id) {
+          return piece;
+        }
+
+        return snapPiece(
+          stopDragging([piece], id)[0],
+          gridSize
+        );
+
+      });
+
+      solved =
+        isPuzzleSolved(updatedPieces);
+
+      return updatedPieces;
+
+    });
+
+    const newMoves = moves + 1;
+
+    setMoves(newMoves);
+
+    const liveScore =
+      calculateScore(
         seconds,
         newMoves
       );
 
-      setScore(liveScore);
+    setScore(liveScore);
 
-      if (!isPuzzleSolved(updated)) return;
+    if (!solved) {
+      return;
+    }
 
-      setGameSolved(true);
+    setGameSolved(true);
 
-      try {
-        await saveGameResult({
-          userId,
-          gameSessionId,
-          difficulty,
-          score: liveScore,
-          moves: newMoves,
-          timeSeconds: seconds,
-        });
+    try {
 
-        await completeGameSession(
-          gameSessionId
-        );
-      } catch (error) {
-        console.error(
-          "Failed to save result:",
-          error
-        );
-      }
+      await saveGameResult({
+        userId,
+        gameSessionId,
+        difficulty,
+        score: liveScore,
+        moves: newMoves,
+        timeSeconds: seconds,
+      });
 
-      setTimeout(() => {
-        setShowDialog(true);
-      }, 300);
-    },
-    [
-      loading,
-      gameSolved,
-      selectedIndex,
-      pieces,
-      moves,
-      seconds,
-      calculateScore,
-      userId,
-      gameSessionId,
-      difficulty,
-    ]
-  );
+      await completeGameSession(
+        gameSessionId
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+    setTimeout(() => {
+      setShowDialog(true);
+    }, 300);
+
+  },
+  [
+    moves,
+    seconds,
+    calculateScore,
+    userId,
+    gameSessionId,
+    difficulty,
+  ]
+);
 
   const handleRestart = useCallback(() => {
-    const shuffled = shufflePuzzle([
-      ...originalPieces,
-    ]);
+    const gridSize =
+    GRID_SIZES[difficulty] ??
+    GRID_SIZES.easy;
+    
+    const shuffled =
+    shufflePuzzle(
+    [...originalPieces],
+    gridSize
+  );
 
     setPieces(shuffled);
 
@@ -232,16 +284,22 @@ export function usePuzzleGame() {
   }, [router]);
 
   return {
-    loading,
-    pieces,
-    imageUrl,
-    moves,
-    seconds,
-    score,
-    showDialog,
-    selectedIndex,
-    handlePieceClick,
-    handleRestart,
-    handleDashboard,
-  };
+  loading,
+  pieces,
+  imageUrl,
+  moves,
+  seconds,
+  score,
+  showDialog,
+  selectedIndex,
+
+  draggingId,
+
+  handleDragStart,
+  handleDragMove,
+  handleDragEnd,
+
+  handleRestart,
+  handleDashboard,
+};
 }

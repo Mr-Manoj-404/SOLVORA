@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
 import PuzzlePiece from "./PuzzlePiece";
@@ -8,8 +9,12 @@ import PuzzleStats from "./PuzzleStats";
 import PuzzleWinDialog from "./PuzzleWinDialog";
 
 import { usePuzzleGame } from "@/hooks/usePuzzleGame";
+import { useDragPuzzle } from "@/hooks/useDragPuzzle";
 
 export default function PuzzleBoard() {
+  console.log("PuzzleBoard rendered");
+  const boardRef = useRef<HTMLDivElement>(null);
+
   const {
     pieces,
     imageUrl,
@@ -17,27 +22,68 @@ export default function PuzzleBoard() {
     seconds,
     score,
     showDialog,
-    selectedIndex,
-    handlePieceClick,
+
+    draggingId,
+
+    handleDragStart,
+    handleDragMove,
+    handleDragEnd,
+
     handleRestart,
     handleDashboard,
   } = usePuzzleGame();
 
-  if (pieces.length === 0) {
-    return (
-      <div className="flex h-[550px] items-center justify-center rounded-2xl border border-slate-700 bg-slate-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent" />
-          <p className="text-lg font-medium text-slate-300">
-            Creating Puzzle...
-          </p>
-        </div>
-      </div>
+  const {
+    dragState,
+    startDrag,
+  } = useDragPuzzle();
+
+  const gridSize = Math.round(Math.sqrt(pieces.length));
+  console.log("Puzzle pieces:", pieces);
+
+  useEffect(() => {
+    if (
+      dragState.draggingId === null ||
+      !boardRef.current
+    ) {
+      return;
+    }
+
+    const rect =
+      boardRef.current.getBoundingClientRect();
+
+    handleDragMove(
+      dragState.draggingId,
+      dragState.mouseX -
+        rect.left -
+        dragState.offsetX,
+      dragState.mouseY -
+        rect.top -
+        dragState.offsetY
     );
-  }
+  }, [
+    dragState,
+    handleDragMove,
+  ]);
 
-  const gridSize = Math.max(1, Math.round(Math.sqrt(pieces.length)));
+  useEffect(() => {
+    if (
+      draggingId !== null &&
+      dragState.draggingId === null
+    ) {
+      handleDragEnd(
+        draggingId,
+        gridSize
+      );
+    }
+  }, [
+    draggingId,
+    dragState.draggingId,
+    gridSize,
+    handleDragEnd,
+  ]);
 
+  console.log("Pieces count:", pieces.length);
   return (
     <>
       <PuzzleWinDialog
@@ -50,48 +96,70 @@ export default function PuzzleBoard() {
       />
 
       <motion.div
-        initial={{ opacity: 0, y: 25 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="rounded-2xl border border-slate-700 bg-slate-900 p-6"
       >
         <h2 className="mb-6 text-2xl font-bold text-cyan-400">
           Puzzle Board
         </h2>
 
-        <div className="mb-8">
-          <PuzzleStats
-            seconds={seconds}
-            moves={moves}
-            score={score}
-          />
-        </div>
+        <PuzzleStats
+          seconds={seconds}
+          moves={moves}
+          score={score}
+        />
 
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <div className="w-full lg:w-56 lg:flex-shrink-0">
+        <div className="mt-8 flex flex-col gap-8 lg:flex-row">
+
+          <div className="w-56 flex-shrink-0">
             <PuzzlePreview imageUrl={imageUrl} />
           </div>
 
           <div className="flex flex-1 justify-center">
+
             <div
-              role="grid"
-              aria-label="Puzzle Board"
-              className="grid w-full max-w-[700px] gap-1"
+              ref={boardRef}
+              className="relative rounded-xl border border-slate-700 bg-slate-950 overflow-hidden"
               style={{
-                gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+                width: 700,
+                height: 700,
               }}
             >
-              {pieces.map((piece, index) => (
+              {pieces.map((piece) => (
                 <PuzzlePiece
                   key={piece.id}
                   piece={piece}
-                  selected={selectedIndex === index}
-                  onClick={() => handlePieceClick(index)}
+                  selected={
+                    draggingId ===
+                    piece.id
+                  }
+                  onMouseDown={(
+                    event
+                  ) => {
+                    const rect =
+                      event.currentTarget.getBoundingClientRect();
+
+                    startDrag(
+                      piece.id,
+                      event.clientX -
+                        rect.left,
+                      event.clientY -
+                        rect.top
+                    );
+
+                    handleDragStart(
+                      piece.id
+                    );
+                  }}
                 />
               ))}
             </div>
+
           </div>
+
         </div>
+
       </motion.div>
     </>
   );

@@ -1,11 +1,11 @@
 export interface PuzzlePiece {
   id: number;
 
+  image: string;
+
   correctIndex: number;
 
   currentIndex: number;
-
-  image: string;
 
   x: number;
   y: number;
@@ -13,7 +13,19 @@ export interface PuzzlePiece {
   width: number;
   height: number;
 
-  placed: boolean;
-
   dragging: boolean;
+
+  placed: boolean;
+}
+
+export interface PuzzleState {
+  pieces: PuzzlePiece[];
+
+  moves: number;
+
+  score: number;
+
+  seconds: number;
+
+  solved: boolean;
 }

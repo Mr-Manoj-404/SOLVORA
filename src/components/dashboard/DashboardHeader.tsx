@@ -1,10 +1,34 @@
+"use client";
+
 import Link from "next/link";
 import { LogOut, User } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function DashboardHeader() {
-  return (
-    <header className="flex items-center justify-between rounded-2xl border border-slate-700 bg-slate-900 p-6">
+  async function handleLogout() {
+    try {
+      const { error } =
+        await supabase.auth.signOut();
 
+      if (error) {
+        console.error(
+          "[SOLVORA] Logout failed:",
+          error
+        );
+        return;
+      }
+
+      window.location.href = "/login";
+    } catch (error) {
+      console.error(
+        "[SOLVORA] Logout failed:",
+        error
+      );
+    }
+  }
+
+  return (
+    <header className="mb-8 flex items-center justify-between">
       <div>
         <h1 className="text-3xl font-bold text-cyan-400">
           SOLVORA
@@ -16,22 +40,23 @@ export default function DashboardHeader() {
       </div>
 
       <div className="flex items-center gap-6">
-
         <Link
           href="/profile"
-          className="flex items-center gap-2 text-white hover:text-cyan-400"
+          className="flex items-center gap-2 text-white transition hover:text-cyan-400"
         >
           <User size={22} />
           Profile
         </Link>
 
-        <button className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white hover:bg-red-600">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition hover:bg-red-600"
+        >
           <LogOut size={18} />
           Logout
         </button>
-
       </div>
-
     </header>
   );
 }

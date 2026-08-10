@@ -1,13 +1,12 @@
 import { PuzzlePiece } from "@/types/puzzle";
 
-/**
- * Creates puzzle pieces with draggable properties.
- */
+export const BOARD_SIZE = 600;
+
 export function createPuzzlePieces(
   images: string[],
-  gridSize: number = 3
+  gridSize: number
 ): PuzzlePiece[] {
-  const pieceSize = 100;
+  const pieceSize = BOARD_SIZE / gridSize;
 
   return images.map((image, index) => ({
     id: index,
@@ -15,26 +14,19 @@ export function createPuzzlePieces(
     image,
 
     correctIndex: index,
-
     currentIndex: index,
 
     x: (index % gridSize) * pieceSize,
-
     y: Math.floor(index / gridSize) * pieceSize,
 
     width: pieceSize,
-
     height: pieceSize,
 
-    placed: false,
-
     dragging: false,
+    placed: false,
   }));
 }
 
-/**
- * Clone puzzle safely.
- */
 export function clonePuzzle(
   pieces: PuzzlePiece[]
 ): PuzzlePiece[] {
@@ -43,11 +35,9 @@ export function clonePuzzle(
   }));
 }
 
-/**
- * Shuffle only logical positions.
- */
 export function shufflePuzzle(
-  pieces: PuzzlePiece[]
+  pieces: PuzzlePiece[],
+  gridSize: number
 ): PuzzlePiece[] {
   const shuffled = clonePuzzle(pieces);
 
@@ -60,15 +50,21 @@ export function shufflePuzzle(
     ];
   }
 
+  const pieceSize = BOARD_SIZE / gridSize;
+
   return shuffled.map((piece, index) => ({
     ...piece,
+
     currentIndex: index,
+
+    x: (index % gridSize) * pieceSize,
+    y: Math.floor(index / gridSize) * pieceSize,
+
+    dragging: false,
+    placed: false,
   }));
 }
 
-/**
- * Drag a puzzle piece.
- */
 export function movePiece(
   pieces: PuzzlePiece[],
   id: number,
@@ -86,9 +82,30 @@ export function movePiece(
   );
 }
 
-/**
- * Begin dragging.
- */
+export function snapPiece(
+  piece: PuzzlePiece,
+  gridSize: number
+): PuzzlePiece {
+  const pieceSize = BOARD_SIZE / gridSize;
+
+  return {
+    ...piece,
+
+    x:
+      (piece.correctIndex % gridSize) *
+      pieceSize,
+
+    y:
+      Math.floor(
+        piece.correctIndex / gridSize
+      ) * pieceSize,
+
+    dragging: false,
+
+    placed: true,
+  };
+}
+
 export function startDragging(
   pieces: PuzzlePiece[],
   id: number
@@ -103,9 +120,6 @@ export function startDragging(
   );
 }
 
-/**
- * Stop dragging.
- */
 export function stopDragging(
   pieces: PuzzlePiece[],
   id: number
@@ -120,36 +134,6 @@ export function stopDragging(
   );
 }
 
-/**
- * Snap piece into its correct place.
- */
-export function snapPiece(
-  piece: PuzzlePiece,
-  gridSize: number
-): PuzzlePiece {
-  const pieceSize = piece.width;
-
-  return {
-    ...piece,
-
-    x:
-      (piece.correctIndex % gridSize) *
-      pieceSize,
-
-    y:
-      Math.floor(
-        piece.correctIndex / gridSize
-      ) * pieceSize,
-
-    placed: true,
-
-    dragging: false,
-  };
-}
-
-/**
- * Puzzle solved?
- */
 export function isPuzzleSolved(
   pieces: PuzzlePiece[]
 ): boolean {

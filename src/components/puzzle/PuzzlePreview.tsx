@@ -12,6 +12,9 @@ type Props = {
 function PuzzlePreview({ imageUrl }: Props) {
   const [loading, setLoading] = useState(true);
 
+  const hasImage =
+    imageUrl.trim().length > 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -15 }}
@@ -28,28 +31,38 @@ function PuzzlePreview({ imageUrl }: Props) {
       </div>
 
       <div className="relative aspect-square w-full overflow-hidden bg-slate-900">
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent" />
+
+        {!hasImage ? (
+          <div className="flex h-full items-center justify-center text-center text-slate-400">
+            No preview available
           </div>
+        ) : (
+          <>
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent" />
+              </div>
+            )}
+
+            <Image
+              src={imageUrl}
+              alt="Original Puzzle Image"
+              fill
+              priority
+              unoptimized
+              draggable={false}
+              onLoad={() => setLoading(false)}
+              className="
+                object-cover
+                transition-transform
+                duration-300
+                hover:scale-105
+                select-none
+              "
+            />
+          </>
         )}
 
-        <Image
-          src={imageUrl}
-          alt="Original Puzzle Image"
-          fill
-          priority
-          unoptimized
-          draggable={false}
-          onLoad={() => setLoading(false)}
-          className={`
-            object-cover
-            transition-transform
-            duration-300
-            hover:scale-105
-            select-none
-          `}
-        />
       </div>
     </motion.div>
   );

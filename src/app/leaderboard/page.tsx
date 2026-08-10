@@ -1,31 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trophy, Medal, Award } from "lucide-react";
-import { getLeaderboard } from "@/services/leaderboard";
+import {
+  Trophy,
+  Medal,
+  Award,
+} from "lucide-react";
 
-type LeaderboardEntry = {
-  score: number;
-  moves: number;
-  time_seconds: number;
-  difficulty: string;
-  created_at: string;
-  profiles: {
-    display_name: string;
-  } | null;
-};
+import {
+  getLeaderboard,
+  type LeaderboardEntry,
+} from "@/services/leaderboard";
 
 export default function LeaderboardPage() {
-  const [players, setPlayers] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [players, setPlayers] =
+    useState<LeaderboardEntry[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     async function loadLeaderboard() {
       try {
-        const data = await getLeaderboard();
-        setPlayers((data as LeaderboardEntry[]) || []);
+        const data =
+          await getLeaderboard();
+
+        setPlayers(data);
       } catch (error) {
-        console.error(error);
+        console.error(
+          "[SOLVORA] Failed to load leaderboard:",
+          error
+        );
       } finally {
         setLoading(false);
       }
@@ -36,15 +41,21 @@ export default function LeaderboardPage() {
 
   function getRankIcon(rank: number) {
     if (rank === 0) {
-      return <Trophy className="h-6 w-6 text-yellow-400" />;
+      return (
+        <Trophy className="h-6 w-6 text-yellow-400" />
+      );
     }
 
     if (rank === 1) {
-      return <Medal className="h-6 w-6 text-slate-300" />;
+      return (
+        <Medal className="h-6 w-6 text-slate-300" />
+      );
     }
 
     if (rank === 2) {
-      return <Award className="h-6 w-6 text-orange-500" />;
+      return (
+        <Award className="h-6 w-6 text-orange-500" />
+      );
     }
 
     return (
@@ -55,7 +66,7 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 p-8 text-white">
+    <main className="min-h-screen bg-slate-950 px-4 py-10 text-white">
       <div className="mx-auto max-w-6xl">
 
         <h1 className="mb-8 text-center text-4xl font-bold text-cyan-400">
@@ -75,51 +86,70 @@ export default function LeaderboardPage() {
             <table className="w-full">
               <thead className="bg-slate-900">
                 <tr>
-                  <th className="p-4 text-left">Rank</th>
-                  <th className="p-4 text-left">Player</th>
-                  <th className="p-4 text-left">Score</th>
-                  <th className="p-4 text-left">Moves</th>
-                  <th className="p-4 text-left">Time</th>
-                  <th className="p-4 text-left">Difficulty</th>
+                  <th className="p-4 text-left">
+                    Rank
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Player
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Score
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Moves
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Time
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Difficulty
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
-                {players.map((player, index) => (
-                  <tr
-                    key={index}
-                    className="border-t border-slate-800 hover:bg-slate-900"
-                  >
-                    <td className="p-4">
-                      {getRankIcon(index)}
-                    </td>
+                {players.map(
+                  (player, index) => (
+                    <tr
+                      key={`${player.created_at}-${index}`}
+                      className="border-t border-slate-800 transition hover:bg-slate-900"
+                    >
+                      <td className="p-4">
+                        {getRankIcon(index)}
+                      </td>
 
-                    <td className="p-4 font-semibold">
-                      {player.profiles?.display_name ?? "Unknown Player"}
-                    </td>
+                      <td className="p-4 font-semibold">
+                        {player.display_name ||
+                          "Unknown Player"}
+                      </td>
 
-                    <td className="p-4 font-bold text-green-400">
-                      {player.score}
-                    </td>
+                      <td className="p-4 font-bold text-green-400">
+                        {player.score}
+                      </td>
 
-                    <td className="p-4">
-                      {player.moves}
-                    </td>
+                      <td className="p-4">
+                        {player.moves}
+                      </td>
 
-                    <td className="p-4">
-                      {player.time_seconds}s
-                    </td>
+                      <td className="p-4">
+                        {player.time_seconds}s
+                      </td>
 
-                    <td className="p-4 capitalize">
-                      {player.difficulty}
-                    </td>
-                  </tr>
-                ))}
+                      <td className="p-4 capitalize">
+                        {player.difficulty}
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>
         )}
-
       </div>
     </main>
   );

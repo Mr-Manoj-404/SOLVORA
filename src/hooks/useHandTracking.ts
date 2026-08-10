@@ -1,175 +1,474 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
-  detectHands,
-  initializeHandTracking,
-} from "@/services/handTracking";
+  FilesetResolver,
+  HandLandmarker,
+  HandLandmarkerResult,
+} from "@mediapipe/tasks-vision";
 
-import {
-  HandData,
-  HandLandmark,
-  HandSide,
-} from "@/types/hand";
-
-import {
-  isPinching,
-  getPinchStrength,
-} from "@/utils/pinch";
-
-interface UseHandTrackingResult {
-  hands: HandData[];
-  isTracking: boolean;
+export interface HandPoint {
+  x: number;
+  y: number;
+  z: number;
 }
 
-export function useHandTracking(
-  videoRef: React.RefObject<HTMLVideoElement | null>
-): UseHandTrackingResult {
-  const animationRef = useRef<number>(0);
-  const isProcessingRef = useRef(false);
+export interface HandData {
+  landmarks: HandPoint[];
 
-  const [hands, setHands] = useState<HandData[]>([]);
-  const [isTracking, setIsTracking] = useState(false);
+  indexTip: HandPoint;
 
-  const detect = useCallback(async () => {
-    if (isProcessingRef.current) {
-      animationRef.current = requestAnimationFrame(detect);
-      return;
-    }
+  thumbTip: HandPoint;
 
-    const video = videoRef.current;
+  isPinching: boolean;
 
-    if (
-      !video ||
-      video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
-    ) {
-      animationRef.current = requestAnimationFrame(detect);
-      return;
-    }
+  handedness:
+    | "Left"
+    | "Right"
+    | "Unknown";
+}
 
-    isProcessingRef.current = true;
+interface UseHandTrackingOptions {
+  videoRef: React.RefObject<HTMLVideoElement | null>;
 
-    try {
-      const result = await detectHands(
-        video,
-        performance.now()
+  enabled?: boolean;
+}
+
+const WASM_URL =
+  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm";
+
+const MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+
+const PINCH_DISTANCE = 0.08;
+
+export function useHandTracking({
+  videoRef,
+  enabled = true,
+}: UseHandTrackingOptions) {
+  const landmarkerRef =
+    useRef<HandLandmarker | null>(null);
+
+  const animationFrameRef =
+    useRef<number | null>(null);
+
+  const lastTimestampRef =
+    useRef(0);
+
+  const [hands, setHands] =
+    useState<HandData[]>([]);
+
+  const [ready, setReady] =
+    useState(false);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  /*
+   * ============================
+   * DISTANCE
+   * ============================
+   */
+
+  const getDistance = useCallback(
+    (
+      a: HandPoint,
+      b: HandPoint
+    ) => {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const dz = a.z - b.z;
+
+      return Math.sqrt(
+        dx * dx +
+          dy * dy +
+          dz * dz
       );
+    },
+    []
+  );
 
-      if (
-        result &&
-        result.landmarks &&
-        result.landmarks.length > 0
-      ) {
-        const detectedHands: HandData[] = [];
-
-        result.landmarks.forEach((landmarks, index) => {
-          const hand = landmarks as HandLandmark[];
-
-          const thumbTip = hand[4];
-          const indexTip = hand[8];
-
-          const pinching = isPinching(
-            thumbTip,
-            indexTip
-          );
-
-          const pinchStrength = getPinchStrength(
-            thumbTip,
-            indexTip
-          );
-
-          let side: HandSide = "Right";
-
-          if (
-            result.handedness &&
-            result.handedness[index]
-          ) {
-            side =
-              result.handedness[index][0]
-                .categoryName as HandSide;
-          }
-
-          detectedHands.push({
-            side,
-            landmarks: hand,
-            isTracking: true,
-            isPinching: pinching,
-            pinchStrength,
-            cursor: {
-              x: indexTip.x,
-              y:1-indexTip.y,
-            },
-          });
-        });
-
-        setHands(detectedHands);
-
-        // ===========================
-        // DEBUG LOGS
-        // ===========================
-        console.clear();
-
-        console.log("====================================");
-        console.log("Hands Detected:", detectedHands.length);
-        console.log("Tracking:", true);
-
-        if (detectedHands.length > 0) {
-          console.log("First Hand:", detectedHands[0].side);
-          console.log("Cursor:", detectedHands[0].cursor);
-          console.log("Index Tip:", detectedHands[0].landmarks[8]);
-          console.log("Thumb Tip:", detectedHands[0].landmarks[4]);
-          console.log("Pinching:", detectedHands[0].isPinching);
-          console.log("Pinch Strength:", detectedHands[0].pinchStrength);
-        }
-
-        console.log("====================================");
-
-        setIsTracking(true);
-      } else {
-        setHands([]);
-        setIsTracking(false);
-      }
-    } catch (error) {
-      console.error("Hand tracking error:", error);
-
-      setHands([]);
-      setIsTracking(false);
-    } finally {
-      isProcessingRef.current = false;
-      animationRef.current =
-        requestAnimationFrame(detect);
-    }
-  }, [videoRef]);
+  /*
+   * ============================
+   * INITIALIZE MEDIAPIPE
+   * ============================
+   */
 
   useEffect(() => {
-    let mounted = true;
+    if (!enabled) {
+      return;
+    }
 
-    async function start() {
+    let cancelled = false;
+
+    async function initialize() {
       try {
-        await initializeHandTracking();
+        console.log(
+          "[SOLVORA] Initializing MediaPipe..."
+        );
 
-        if (mounted) {
-          detect();
+        setReady(false);
+        setError(null);
+
+        const vision =
+          await FilesetResolver.forVisionTasks(
+            WASM_URL
+          );
+
+        if (cancelled) {
+          return;
         }
-      } catch (error) {
+
+        console.log(
+          "[SOLVORA] MediaPipe WASM loaded."
+        );
+
+        const landmarker =
+          await HandLandmarker.createFromOptions(
+            vision,
+            {
+              baseOptions: {
+                modelAssetPath:
+                  MODEL_URL,
+
+                delegate: "CPU",
+              },
+
+              runningMode: "VIDEO",
+
+              /*
+               * IMPORTANT:
+               * Detect TWO hands.
+               */
+              numHands: 2,
+
+              minHandDetectionConfidence:
+                0.5,
+
+              minHandPresenceConfidence:
+                0.5,
+
+              minTrackingConfidence:
+                0.5,
+            }
+          );
+
+        if (cancelled) {
+          landmarker.close();
+          return;
+        }
+
+        landmarkerRef.current =
+          landmarker;
+
+        setReady(true);
+
+        console.log(
+          "[SOLVORA] Hand Landmarker ready."
+        );
+
+        console.log(
+          "[SOLVORA] Two-hand tracking enabled."
+        );
+      } catch (err) {
         console.error(
-          "Unable to initialize hand tracking:",
-          error
+          "[SOLVORA] MediaPipe initialization failed:",
+          err
+        );
+
+        setReady(false);
+
+        setError(
+          "MediaPipe failed to initialize. Check the browser console."
         );
       }
     }
 
-    start();
+    initialize();
 
     return () => {
-      mounted = false;
-      cancelAnimationFrame(animationRef.current);
+      cancelled = true;
+
+      if (
+        animationFrameRef.current !==
+        null
+      ) {
+        cancelAnimationFrame(
+          animationFrameRef.current
+        );
+
+        animationFrameRef.current =
+          null;
+      }
+
+      if (
+        landmarkerRef.current
+      ) {
+        landmarkerRef.current.close();
+
+        landmarkerRef.current =
+          null;
+      }
     };
-  }, [detect]);
+  }, [enabled]);
+
+  /*
+   * ============================
+   * DETECTION
+   * ============================
+   */
+
+  const detect = useCallback(() => {
+    if (!enabled) {
+      return;
+    }
+
+    const video =
+      videoRef.current;
+
+    const landmarker =
+      landmarkerRef.current;
+
+    if (
+      !video ||
+      !landmarker ||
+      !ready
+    ) {
+      animationFrameRef.current =
+        requestAnimationFrame(
+          detect
+        );
+
+      return;
+    }
+
+    if (
+      video.readyState <
+      HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
+      animationFrameRef.current =
+        requestAnimationFrame(
+          detect
+        );
+
+      return;
+    }
+
+    if (
+      video.videoWidth === 0 ||
+      video.videoHeight === 0
+    ) {
+      animationFrameRef.current =
+        requestAnimationFrame(
+          detect
+        );
+
+      return;
+    }
+
+    const timestamp =
+      performance.now();
+
+    if (
+      timestamp <=
+      lastTimestampRef.current
+    ) {
+      animationFrameRef.current =
+        requestAnimationFrame(
+          detect
+        );
+
+      return;
+    }
+
+    lastTimestampRef.current =
+      timestamp;
+
+    try {
+      const result:
+        HandLandmarkerResult =
+        landmarker.detectForVideo(
+          video,
+          timestamp
+        );
+
+      /*
+       * No hands.
+       */
+
+      if (
+        !result.landmarks ||
+        result.landmarks.length === 0
+      ) {
+        setHands([]);
+
+        animationFrameRef.current =
+          requestAnimationFrame(
+            detect
+          );
+
+        return;
+      }
+
+      /*
+       * Process EVERY detected hand.
+       */
+
+      const detectedHands: HandData[] =
+        result.landmarks.map(
+          (rawLandmarks, handIndex) => {
+            const landmarks: HandPoint[] =
+              rawLandmarks.map(
+                (point) => ({
+                  x: point.x,
+                  y: point.y,
+                  z: point.z,
+                })
+              );
+
+            const thumbTip =
+              landmarks[4];
+
+            const indexTip =
+              landmarks[8];
+
+            const pinchDistance =
+              getDistance(
+                thumbTip,
+                indexTip
+              );
+
+            const isPinching =
+              pinchDistance <
+              PINCH_DISTANCE;
+
+            /*
+             * MediaPipe gives handedness
+             * information for each detected hand.
+             */
+
+            let handedness:
+              | "Left"
+              | "Right"
+              | "Unknown" =
+              "Unknown";
+
+            const classification =
+              result.handednesses?.[
+                handIndex
+              ]?.[0];
+
+            if (
+              classification?.categoryName ===
+              "Left"
+            ) {
+              handedness = "Left";
+            } else if (
+              classification?.categoryName ===
+              "Right"
+            ) {
+              handedness = "Right";
+            }
+
+            return {
+              landmarks,
+              thumbTip,
+              indexTip,
+              isPinching,
+              handedness,
+            };
+          }
+        );
+
+      setHands(
+        detectedHands
+      );
+    } catch (err) {
+      console.error(
+        "[SOLVORA] Hand detection error:",
+        err
+      );
+    }
+
+    animationFrameRef.current =
+      requestAnimationFrame(
+        detect
+      );
+  }, [
+    enabled,
+    ready,
+    videoRef,
+    getDistance,
+  ]);
+
+  /*
+   * ============================
+   * START DETECTION
+   * ============================
+   */
+
+  useEffect(() => {
+    if (!enabled || !ready) {
+      return;
+    }
+
+    console.log(
+      "[SOLVORA] Starting two-hand detection..."
+    );
+
+    lastTimestampRef.current =
+      0;
+
+    animationFrameRef.current =
+      requestAnimationFrame(
+        detect
+      );
+
+    return () => {
+      if (
+        animationFrameRef.current !==
+        null
+      ) {
+        cancelAnimationFrame(
+          animationFrameRef.current
+        );
+
+        animationFrameRef.current =
+          null;
+      }
+    };
+  }, [
+    enabled,
+    ready,
+    detect,
+  ]);
+
+  /*
+   * Keep `hand` for compatibility
+   * with existing components.
+   *
+   * New code should use `hands`.
+   */
+
+  const hand =
+    hands[0] ?? null;
 
   return {
     hands,
-    isTracking,
+
+    /*
+     * Backward compatibility.
+     */
+    hand,
+
+    ready,
+
+    error,
   };
 }

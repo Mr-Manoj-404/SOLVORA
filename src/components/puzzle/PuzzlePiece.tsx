@@ -1,69 +1,82 @@
 "use client";
 
-import { memo } from "react";
-import Image from "next/image";
+import { motion } from "framer-motion";
 
 import { PuzzlePiece as Piece } from "@/types/puzzle";
-import { isPieceCorrect } from "@/services/puzzleEngine";
 
-type Props = {
+interface PuzzlePieceProps {
   piece: Piece;
-  selected: boolean;
-  onClick: () => void;
-};
+  selected?: boolean;
+  onClick?: () => void;
 
-function PuzzlePiece({
+  onMouseDown?: (
+    event: React.MouseEvent<HTMLDivElement>
+  ) => void;
+}
+
+export default function PuzzlePiece({
   piece,
-  selected,
+  selected = false,
   onClick,
-}: Props) {
-  const correct = isPieceCorrect(piece);
-
+  onMouseDown,
+}: PuzzlePieceProps) {
   return (
-    <button
-      type="button"
+    <motion.div
+      layout
+      animate={{
+        x: piece.x,
+        y: piece.y,
+        scale: piece.dragging ? 1.08 : 1,
+        rotate: piece.dragging ? 2 : 0,
+        zIndex: piece.dragging ? 100 : 1,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 350,
+        damping: 25,
+      }}
+      onMouseDown={onMouseDown}
       onClick={onClick}
-      aria-label={`Puzzle piece ${piece.correctIndex + 1}`}
       className={`
-        relative
-        aspect-square
+        absolute
         overflow-hidden
         rounded-xl
         border
+        cursor-grab
+        active:cursor-grabbing
+        select-none
+        shadow-lg
         transition-all
-        duration-200
-        focus:outline-none
-        focus:ring-2
-        focus:ring-cyan-400
 
         ${
           selected
-            ? "scale-95 ring-4 ring-cyan-400 border-cyan-400 shadow-lg shadow-cyan-500/30"
-            : "hover:scale-95 border-slate-700"
+            ? "border-cyan-400 ring-4 ring-cyan-400/30"
+            : "border-slate-700"
         }
 
         ${
-          correct
-            ? "ring-2 ring-green-500"
+          piece.dragging
+            ? "shadow-cyan-500/40"
             : ""
         }
       `}
+      style={{
+        width: piece.width,
+        height: piece.height,
+        left: 0,
+        top: 0,
+      }}
     >
-      <Image
+      <img
         src={piece.image}
-        alt={`Puzzle piece ${piece.correctIndex + 1}`}
-        fill
+        alt={`Piece ${piece.id}`}
         draggable={false}
-        sizes="(max-width:768px) 100px, 150px"
-        className="object-cover select-none pointer-events-none"
-        priority={false}
+        className="h-full w-full object-cover pointer-events-none"
       />
 
-      {selected && (
-        <div className="absolute inset-0 bg-cyan-400/10" />
+      {piece.placed && (
+        <div className="absolute inset-0 bg-green-500/15 border-2 border-green-400 rounded-xl" />
       )}
-    </button>
+    </motion.div>
   );
 }
-
-export default memo(PuzzlePiece);
