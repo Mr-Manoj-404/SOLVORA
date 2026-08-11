@@ -197,3 +197,27 @@ export async function updateUserProfile(
 
   return data;
 }
+export async function getGlobalRank(): Promise<number | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User is not authenticated.");
+  }
+
+  const { data, error } = await supabase.rpc(
+    "get_user_global_rank"
+  );
+
+  if (error) {
+    console.error(
+      "[SOLVORA] Failed to load global rank:",
+      error
+    );
+
+    throw error;
+  }
+
+  return data ?? null;
+}

@@ -12,8 +12,10 @@ import {
   Globe,
 } from "lucide-react";
 
-import { getProfileStats } from "@/services/profile";
-
+import {
+  getProfileStats,
+  getGlobalRank,
+} from "@/services/profile";
 interface Stats {
   gamesPlayed: number;
   bestScore: number;
@@ -46,6 +48,9 @@ export default function StatsSection() {
   const [stats, setStats] =
     useState<Stats | null>(null);
 
+    const [globalRank, setGlobalRank] =
+    useState<number | null>(null);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -53,9 +58,14 @@ export default function StatsSection() {
     async function loadStats() {
       try {
         const data =
-          await getProfileStats();
-
+        await getProfileStats();
+        
         setStats(data);
+        
+        const rank =
+        await getGlobalRank();
+        
+        setGlobalRank(rank);
       } catch (error) {
         console.error(
           "[SOLVORA] Failed to load dashboard stats:",
@@ -99,7 +109,11 @@ export default function StatsSection() {
     },
     {
       title: "Global Rank",
-      value: "--",
+      value: loading
+      ? "..."
+      : globalRank !== null
+      ? `#${globalRank}`
+      : "--",
       icon: Globe,
     },
   ];

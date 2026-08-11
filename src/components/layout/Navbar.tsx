@@ -48,16 +48,29 @@ export default function Navbar() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      setUserEmail(
-        user?.email ?? null
-      );
+      setUserEmail(user?.email ?? null);
     }
 
     loadUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUserEmail(session?.user?.email ?? null);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();
+
+    setUserEmail(null);
+    setMenuOpen(false);
 
     window.location.href = "/login";
   }
@@ -69,7 +82,7 @@ export default function Navbar() {
         {/* LOGO */}
 
         <Link
-          href="/dashboard"
+          href="/"
           className="group flex items-center gap-2"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/10 text-lg ring-1 ring-cyan-400/30 transition group-hover:bg-cyan-400/20">
@@ -81,17 +94,14 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* DESKTOP NAVIGATION */}
+        {/* LOGGED-IN NAVIGATION */}
 
-        <div className="hidden items-center gap-1 md:flex">
-          {navigation.map(
-            (item) => {
+        {userEmail && (
+          <div className="hidden items-center gap-1 md:flex">
+            {navigation.map((item) => {
               const active =
-                pathname ===
-                  item.href ||
-                pathname.startsWith(
-                  `${item.href}/`
-                );
+                pathname === item.href ||
+                pathname.startsWith(`${item.href}/`);
 
               return (
                 <Link
@@ -103,73 +113,75 @@ export default function Navbar() {
                       : "text-slate-400 hover:bg-slate-800 hover:text-white"
                   }`}
                 >
-                  <span>
-                    {item.icon}
-                  </span>
-
-                  <span>
-                    {item.name}
-                  </span>
+                  <span>{item.icon}</span>
+                  <span>{item.name}</span>
                 </Link>
               );
-            }
-          )}
-        </div>
+            })}
+          </div>
+        )}
 
-        {/* USER MENU */}
+        {/* AUTH BUTTONS / USER MENU */}
 
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() =>
-              setMenuOpen(
-                (previous) =>
-                  !previous
-              )
-            }
-            className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 transition hover:border-cyan-400/30"
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-400/10 text-sm text-cyan-400">
-              👤
-            </div>
+        {!userEmail ? (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            >
+              Login
+            </Link>
 
-            <span className="hidden max-w-[140px] truncate text-sm text-slate-300 sm:block">
-              {userEmail ??
-                "Account"}
-            </span>
+            <Link
+              href="/signup"
+              className="rounded-xl bg-cyan-400 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+            >
+              Sign Up
+            </Link>
+          </div>
+        ) : (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() =>
+                setMenuOpen(
+                  (previous) => !previous
+                )
+              }
+              className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 transition hover:border-cyan-400/30"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-400/10 text-sm text-cyan-400">
+                👤
+              </div>
 
-            <span className="text-xs text-slate-500">
-              ▼
-            </span>
-          </button>
+              <span className="hidden max-w-[140px] truncate text-sm text-slate-300 sm:block">
+                {userEmail}
+              </span>
 
-          {menuOpen && (
-            <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
+              <span className="text-xs text-slate-500">
+                ▼
+              </span>
+            </button>
 
-              {/* MOBILE NAV */}
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
 
-              <div className="border-b border-slate-800 p-2 md:hidden">
-                {navigation.map(
-                  (item) => {
+                {/* MOBILE NAV */}
+
+                <div className="border-b border-slate-800 p-2 md:hidden">
+                  {navigation.map((item) => {
                     const active =
-                      pathname ===
-                        item.href ||
+                      pathname === item.href ||
                       pathname.startsWith(
                         `${item.href}/`
                       );
 
                     return (
                       <Link
-                        key={
-                          item.href
-                        }
-                        href={
-                          item.href
-                        }
+                        key={item.href}
+                        href={item.href}
                         onClick={() =>
-                          setMenuOpen(
-                            false
-                          )
+                          setMenuOpen(false)
                         }
                         className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
                           active
@@ -177,59 +189,50 @@ export default function Navbar() {
                             : "text-slate-400 hover:bg-slate-800 hover:text-white"
                         }`}
                       >
-                        <span>
-                          {
-                            item.icon
-                          }
-                        </span>
-
-                        {
-                          item.name
-                        }
+                        <span>{item.icon}</span>
+                        {item.name}
                       </Link>
                     );
+                  })}
+                </div>
+
+                {/* PROFILE */}
+
+                <Link
+                  href="/profile"
+                  onClick={() =>
+                    setMenuOpen(false)
                   }
-                )}
+                  className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800"
+                >
+                  👤 My Profile
+                </Link>
+
+                {/* SETTINGS */}
+
+                <Link
+                  href="/settings"
+                  onClick={() =>
+                    setMenuOpen(false)
+                  }
+                  className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800"
+                >
+                  ⚙️ Settings
+                </Link>
+
+                {/* LOGOUT */}
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full border-t border-slate-800 px-4 py-3 text-left text-sm text-red-400 transition hover:bg-red-500/10"
+                >
+                  🚪 Sign out
+                </button>
               </div>
-
-              {/* PROFILE */}
-
-              <Link
-                href="/profile"
-                onClick={() =>
-                  setMenuOpen(false)
-                }
-                className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800"
-              >
-                👤 My Profile
-              </Link>
-
-              {/* SETTINGS */}
-
-              <Link
-                href="/settings"
-                onClick={() =>
-                  setMenuOpen(false)
-                }
-                className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800"
-              >
-                ⚙️ Settings
-              </Link>
-
-              {/* LOGOUT */}
-
-              <button
-                type="button"
-                onClick={
-                  handleLogout
-                }
-                className="w-full border-t border-slate-800 px-4 py-3 text-left text-sm text-red-400 transition hover:bg-red-500/10"
-              >
-                🚪 Sign out
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );
