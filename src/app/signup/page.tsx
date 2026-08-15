@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { signUp } from "@/services/auth";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -32,51 +37,78 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-      <Card className="w-full max-w-md bg-slate-900 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-center text-3xl text-cyan-400">
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-8 sm:px-6">
+      <Card className="w-full max-w-md border-slate-700 bg-slate-900 shadow-xl">
+        <CardHeader className="px-5 pt-6 sm:px-8 sm:pt-8">
+          <CardTitle className="text-center text-3xl font-bold text-cyan-400 sm:text-4xl">
             Create Account
           </CardTitle>
+
+          <p className="mt-2 text-center text-sm text-slate-400 sm:text-base">
+            Join SOLVORA and start solving puzzles
+          </p>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="px-5 pb-6 sm:px-8 sm:pb-8">
           <form onSubmit={handleSignup} className="space-y-5">
+
+            {/* EMAIL */}
             <div>
-              <Label className="mb-2 block text-base font-semibold text-white">
+              <Label
+                htmlFor="signup-email"
+                className="mb-2 block text-sm font-semibold text-white sm:text-base"
+              >
                 Email
               </Label>
 
               <Input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-12 border-slate-600 bg-slate-800 text-lg text-white placeholder:text-slate-400 focus:border-cyan-400"
+                id="signup-email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
+                autoComplete="email"
+                className="h-12 border-slate-600 bg-slate-800 px-4 text-base text-white placeholder:text-slate-400 focus:border-cyan-400 focus:ring-cyan-400 sm:text-lg"
+                required
               />
             </div>
 
+            {/* PASSWORD */}
             <div>
-             <Label className="mb-2 block text-base font-semibold text-white">
+              <Label
+                htmlFor="signup-password"
+                className="mb-2 block text-sm font-semibold text-white sm:text-base"
+              >
                 Password
-             </Label>
+              </Label>
 
-             <Input
-             type="password"
-             placeholder="Create password"
-             value={password}
-             onChange={(e) => setPassword(e.target.value)}
-             className="h-12 border-slate-600 bg-slate-800 text-lg text-white placeholder:text-slate-400 focus:border-cyan-400"
-             />
+              <Input
+                id="signup-password"
+                type="password"
+                placeholder="Create password"
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
+                autoComplete="new-password"
+                className="h-12 border-slate-600 bg-slate-800 px-4 text-base text-white placeholder:text-slate-400 focus:border-cyan-400 focus:ring-cyan-400 sm:text-lg"
+                required
+              />
             </div>
 
+            {/* SIGN UP BUTTON */}
             <Button
-            type="submit"
-            className="h-12 w-full bg-cyan-400 text-lg font-semibold text-black hover:bg-cyan-300"
-            disabled={loading}
+              type="submit"
+              className="h-12 w-full bg-cyan-400 text-base font-bold text-black transition hover:bg-cyan-300 active:scale-[0.98] sm:text-lg"
+              disabled={loading}
             >
-              {loading ? "Creating Account..." : "Create Account"}
+              {loading
+                ? "Creating Account..."
+                : "Create Account"}
             </Button>
+
           </form>
         </CardContent>
       </Card>

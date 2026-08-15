@@ -9,7 +9,7 @@ const navigation = [
   {
     name: "Dashboard",
     href: "/dashboard",
-    icon: "⌂",
+    icon: "📊",
   },
   {
     name: "Play",
@@ -57,7 +57,9 @@ export default function Navbar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUserEmail(session?.user?.email ?? null);
+        setUserEmail(
+          session?.user?.email ?? null
+        );
       }
     );
 
@@ -75,33 +77,40 @@ export default function Navbar() {
     window.location.href = "/login";
   }
 
+  function closeMenu() {
+    setMenuOpen(false);
+  }
+
   return (
-    <nav className="sticky top-0 z-[500] border-b border-slate-800 bg-slate-950/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+    <nav className="sticky top-0 z-[500] border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl">
+      <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
 
         {/* LOGO */}
 
         <Link
           href="/"
-          className="group flex items-center gap-2"
+          onClick={closeMenu}
+          className="group flex shrink-0 items-center gap-2"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/10 text-lg ring-1 ring-cyan-400/30 transition group-hover:bg-cyan-400/20">
             🧩
           </div>
 
-          <span className="text-xl font-black tracking-wide text-cyan-400">
+          <span className="text-lg font-black tracking-wide text-cyan-400 sm:text-xl">
             SOLVORA
           </span>
         </Link>
 
-        {/* LOGGED-IN NAVIGATION */}
+        {/* DESKTOP NAVIGATION */}
 
         {userEmail && (
           <div className="hidden items-center gap-1 md:flex">
             {navigation.map((item) => {
               const active =
                 pathname === item.href ||
-                pathname.startsWith(`${item.href}/`);
+                pathname.startsWith(
+                  `${item.href}/`
+                );
 
               return (
                 <Link
@@ -121,36 +130,41 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* AUTH BUTTONS / USER MENU */}
+        {/* RIGHT SIDE */}
 
         {!userEmail ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/login"
-              className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white sm:px-4"
             >
               Login
             </Link>
 
             <Link
               href="/signup"
-              className="rounded-xl bg-cyan-400 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+              className="rounded-xl bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 sm:px-4"
             >
               Sign Up
             </Link>
           </div>
         ) : (
           <div className="relative">
+
+            {/* ACCOUNT BUTTON */}
+
             <button
               type="button"
+              aria-label="Open account menu"
+              aria-expanded={menuOpen}
               onClick={() =>
                 setMenuOpen(
                   (previous) => !previous
                 )
               }
-              className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 transition hover:border-cyan-400/30"
+              className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-2 transition hover:border-cyan-400/30 sm:px-3"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-400/10 text-sm text-cyan-400">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-400/10 text-sm text-cyan-400">
                 👤
               </div>
 
@@ -158,78 +172,140 @@ export default function Navbar() {
                 {userEmail}
               </span>
 
-              <span className="text-xs text-slate-500">
+              <span
+                className={`text-xs text-slate-500 transition-transform ${
+                  menuOpen
+                    ? "rotate-180"
+                    : ""
+                }`}
+              >
                 ▼
               </span>
             </button>
 
+            {/* ACCOUNT MENU */}
+
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
-
-                {/* MOBILE NAV */}
-
-                <div className="border-b border-slate-800 p-2 md:hidden">
-                  {navigation.map((item) => {
-                    const active =
-                      pathname === item.href ||
-                      pathname.startsWith(
-                        `${item.href}/`
-                      );
-
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() =>
-                          setMenuOpen(false)
-                        }
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
-                          active
-                            ? "bg-cyan-400/10 text-cyan-400"
-                            : "text-slate-400 hover:bg-slate-800 hover:text-white"
-                        }`}
-                      >
-                        <span>{item.icon}</span>
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-                </div>
-
-                {/* PROFILE */}
-
-                <Link
-                  href="/profile"
-                  onClick={() =>
-                    setMenuOpen(false)
-                  }
-                  className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800"
-                >
-                  👤 My Profile
-                </Link>
-
-                {/* SETTINGS */}
-
-                <Link
-                  href="/settings"
-                  onClick={() =>
-                    setMenuOpen(false)
-                  }
-                  className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800"
-                >
-                  ⚙️ Settings
-                </Link>
-
-                {/* LOGOUT */}
+              <>
+                {/* MOBILE BACKDROP */}
 
                 <button
                   type="button"
-                  onClick={handleLogout}
-                  className="w-full border-t border-slate-800 px-4 py-3 text-left text-sm text-red-400 transition hover:bg-red-500/10"
-                >
-                  🚪 Sign out
-                </button>
-              </div>
+                  aria-label="Close menu"
+                  onClick={closeMenu}
+                  className="fixed inset-0 z-[-1] h-screen w-screen cursor-default md:hidden"
+                />
+
+                <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-64 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl sm:w-64">
+
+                  {/* MOBILE NAVIGATION */}
+
+                  <div className="border-b border-slate-800 p-2 md:hidden">
+                    <p className="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Navigation
+                    </p>
+
+                    {navigation.map(
+                      (item) => {
+                        const active =
+                          pathname ===
+                            item.href ||
+                          pathname.startsWith(
+                            `${item.href}/`
+                          );
+
+                        return (
+                          <Link
+                            key={
+                              item.href
+                            }
+                            href={
+                              item.href
+                            }
+                            onClick={
+                              closeMenu
+                            }
+                            className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
+                              active
+                                ? "bg-cyan-400/10 text-cyan-400"
+                                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                            }`}
+                          >
+                            <span className="text-base">
+                              {
+                                item.icon
+                              }
+                            </span>
+
+                            <span>
+                              {
+                                item.name
+                              }
+                            </span>
+                          </Link>
+                        );
+                      }
+                    )}
+                  </div>
+
+                  {/* ACCOUNT */}
+
+                  <div className="p-2">
+
+                    <Link
+                      href="/profile"
+                      onClick={
+                        closeMenu
+                      }
+                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                    >
+                      <span>
+                        👤
+                      </span>
+
+                      <span>
+                        My Profile
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/settings"
+                      onClick={
+                        closeMenu
+                      }
+                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                    >
+                      <span>
+                        ⚙️
+                      </span>
+
+                      <span>
+                        Settings
+                      </span>
+                    </Link>
+
+                  </div>
+
+                  {/* LOGOUT */}
+
+                  <button
+                    type="button"
+                    onClick={
+                      handleLogout
+                    }
+                    className="flex w-full items-center gap-3 border-t border-slate-800 px-5 py-3.5 text-left text-sm font-medium text-red-400 transition hover:bg-red-500/10"
+                  >
+                    <span>
+                      🚪
+                    </span>
+
+                    <span>
+                      Sign out
+                    </span>
+                  </button>
+
+                </div>
+              </>
             )}
           </div>
         )}

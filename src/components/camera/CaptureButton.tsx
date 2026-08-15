@@ -28,22 +28,30 @@ function CaptureButton({
       disabled={disabled || loading}
       className="
         flex
+        min-h-12
+        w-full
+        max-w-sm
         items-center
         justify-center
-        gap-3
+        gap-2
         rounded-2xl
         bg-cyan-400
-        px-8
-        py-4
-        text-lg
+        px-6
+        py-3
+        text-base
         font-bold
         text-black
         shadow-xl
         transition-all
         duration-200
         hover:bg-cyan-300
+        active:scale-[0.98]
         disabled:cursor-not-allowed
         disabled:opacity-60
+        sm:gap-3
+        sm:px-8
+        sm:py-4
+        sm:text-lg
       "
     >
       {loading ? (
@@ -53,7 +61,7 @@ function CaptureButton({
         </>
       ) : (
         <>
-          <Camera size={22} />
+          <Camera className="h-5 w-5 sm:h-[22px] sm:w-[22px]" />
           Capture Photo
         </>
       )}

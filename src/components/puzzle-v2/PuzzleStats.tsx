@@ -12,34 +12,37 @@ export default function PuzzleStats({
   seconds,
 }: Props) {
   return (
-    <div className="mb-6 flex gap-6">
-
-      <div className="rounded-lg bg-slate-800 px-5 py-3">
-        <p className="text-sm text-slate-400">
+    <div className="mb-5 grid grid-cols-3 gap-2 sm:mb-6 sm:gap-4">
+      
+      {/* MOVES */}
+      <div className="rounded-xl bg-slate-800 px-3 py-3 text-center sm:rounded-lg sm:px-5 sm:py-3">
+        <p className="text-xs text-slate-400 sm:text-sm">
           Moves
         </p>
 
-        <p className="text-2xl font-bold text-white">
+        <p className="mt-1 text-xl font-bold text-white sm:text-2xl">
           {moves}
         </p>
       </div>
 
-      <div className="rounded-lg bg-slate-800 px-5 py-3">
-        <p className="text-sm text-slate-400">
+      {/* TIME */}
+      <div className="rounded-xl bg-slate-800 px-3 py-3 text-center sm:rounded-lg sm:px-5 sm:py-3">
+        <p className="text-xs text-slate-400 sm:text-sm">
           Time
         </p>
 
-        <p className="text-2xl font-bold text-white">
+        <p className="mt-1 text-xl font-bold text-white sm:text-2xl">
           {seconds}s
         </p>
       </div>
 
-      <div className="rounded-lg bg-slate-800 px-5 py-3">
-        <p className="text-sm text-slate-400">
+      {/* SCORE */}
+      <div className="rounded-xl bg-slate-800 px-3 py-3 text-center sm:rounded-lg sm:px-5 sm:py-3">
+        <p className="text-xs text-slate-400 sm:text-sm">
           Score
         </p>
 
-        <p className="text-2xl font-bold text-white">
+        <p className="mt-1 text-xl font-bold text-white sm:text-2xl">
           {score}
         </p>
       </div>

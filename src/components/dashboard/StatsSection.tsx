@@ -16,6 +16,7 @@ import {
   getProfileStats,
   getGlobalRank,
 } from "@/services/profile";
+
 interface Stats {
   gamesPlayed: number;
   bestScore: number;
@@ -23,32 +24,28 @@ interface Stats {
   bestTime: number | null;
 }
 
-function formatTime(
-  seconds: number | null
-) {
+function formatTime(seconds: number | null) {
   if (seconds === null) {
     return "--:--";
   }
 
-  const minutes =
-    Math.floor(seconds / 60);
-
-  const remainingSeconds =
-    seconds % 60;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
 
   return `${String(minutes).padStart(
     2,
     "0"
-  )}:${String(
-    remainingSeconds
-  ).padStart(2, "0")}`;
+  )}:${String(remainingSeconds).padStart(
+    2,
+    "0"
+  )}`;
 }
 
 export default function StatsSection() {
   const [stats, setStats] =
     useState<Stats | null>(null);
 
-    const [globalRank, setGlobalRank] =
+  const [globalRank, setGlobalRank] =
     useState<number | null>(null);
 
   const [loading, setLoading] =
@@ -58,13 +55,13 @@ export default function StatsSection() {
     async function loadStats() {
       try {
         const data =
-        await getProfileStats();
-        
+          await getProfileStats();
+
         setStats(data);
-        
+
         const rank =
-        await getGlobalRank();
-        
+          await getGlobalRank();
+
         setGlobalRank(rank);
       } catch (error) {
         console.error(
@@ -110,55 +107,56 @@ export default function StatsSection() {
     {
       title: "Global Rank",
       value: loading
-      ? "..."
-      : globalRank !== null
-      ? `#${globalRank}`
-      : "--",
+        ? "..."
+        : globalRank !== null
+          ? `#${globalRank}`
+          : "--",
       icon: Globe,
     },
   ];
 
   return (
-    <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {dashboardStats.map(
-        (stat) => {
-          const Icon =
-            stat.icon;
+    <section className="mb-6 grid grid-cols-2 gap-3 sm:mb-8 sm:gap-4 lg:grid-cols-4">
+      {dashboardStats.map((stat) => {
+        const Icon = stat.icon;
 
-          return (
-            <div
-              key={stat.title}
+        return (
+          <div
+            key={stat.title}
+            className="
+              rounded-2xl
+              border
+              border-slate-800
+              bg-slate-900/70
+              p-4
+              shadow-lg
+              transition
+              hover:border-cyan-400/30
+              sm:p-6
+            "
+          >
+            <Icon
               className="
-                rounded-2xl
-                border
-                border-slate-800
-                bg-slate-900/70
-                p-6
-                shadow-lg
-                transition
-                hover:border-cyan-400/30
+                mb-3
+                h-6
+                w-6
+                text-cyan-400
+                sm:mb-4
+                sm:h-8
+                sm:w-8
               "
-            >
-              <Icon
-                className="
-                  mb-4
-                  h-8
-                  w-8
-                  text-cyan-400
-                "
-              />
+            />
 
-              <h3 className="text-slate-400">
-                {stat.title}
-              </h3>
+            <h3 className="text-xs text-slate-400 sm:text-sm">
+              {stat.title}
+            </h3>
 
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stat.value}
-              </p>
-            </div>
-          );
-        }
-      )}
+            <p className="mt-1 break-words text-2xl font-bold text-white sm:mt-2 sm:text-3xl">
+              {stat.value}
+            </p>
+          </div>
+        );
+      })}
     </section>
   );
 }

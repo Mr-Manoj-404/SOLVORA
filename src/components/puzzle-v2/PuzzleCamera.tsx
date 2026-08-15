@@ -979,15 +979,18 @@ export default function PuzzleCamera({
     <div
       ref={cameraRef}
       className="
-        relative
-        mx-auto
-        w-full
-        max-w-[900px]
-        overflow-hidden
-        rounded-2xl
-        border
-        border-slate-700
-        shadow-2xl
+      relative
+      mx-auto
+      w-full
+      max-w-[900px]
+      overflow-hidden
+      rounded-2xl
+      border
+      border-slate-700
+      shadow-2xl
+      touch-none
+      select-none
+      overscroll-contain
       "
       style={{
         aspectRatio: "900 / 700",

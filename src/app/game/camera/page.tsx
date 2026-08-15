@@ -67,8 +67,8 @@ function CameraPageContent() {
   });
 
   /*
-   * Convert the HandData returned by
-   * useHandTracking into the HandData
+   * Convert HandData returned by
+   * useHandTracking into HandData
    * expected by HandTracker.
    */
   const trackerHands = hands
@@ -277,68 +277,98 @@ function CameraPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-h-screen overflow-x-hidden bg-slate-950 px-3 py-6 text-white sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-6xl">
 
-        <h1 className="mb-3 text-center text-4xl font-bold text-cyan-400">
+        {/* HEADER */}
+        <h1 className="text-center text-3xl font-bold text-cyan-400 sm:text-4xl">
           Camera
         </h1>
 
-        <p className="mb-8 text-center text-lg text-slate-400">
+        <p className="mb-5 mt-2 text-center text-sm text-slate-400 sm:mb-8 sm:mt-3 sm:text-lg">
           Difficulty:
           <span className="ml-2 font-bold capitalize text-cyan-400">
             {difficulty}
           </span>
         </p>
 
-        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
+        {/* CAMERA CONTAINER */}
+        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-3 shadow-xl sm:p-6">
 
           {error ? (
-            <p className="text-center text-lg text-red-400">
-              {error}
-            </p>
+            <div className="rounded-xl bg-red-500/10 p-6 text-center">
+              <p className="text-base text-red-400 sm:text-lg">
+                {error}
+              </p>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Please allow camera access and try again.
+              </p>
+            </div>
           ) : (
             <>
-              {capturedImage ? (
-                <ImagePreview
-                  image={capturedImage}
-                />
-              ) : (
-                <CameraView
-                  videoRef={videoRef}
-                  isActive={cameraReady}
-                >
-                  <HandTracker
-                    hands={trackerHands}
-                    width={1280}
-                    height={720}
+              {/* CAMERA / IMAGE */}
+              <div className="w-full overflow-hidden rounded-xl">
+                {capturedImage ? (
+                  <ImagePreview
+                    image={capturedImage}
                   />
-
-                  {hands.length > 0 && (
-                    <HandCursor
-                      x={
-                        hands[0].indexTip.x
-                      }
-                      y={
-                        hands[0].indexTip.y
-                      }
-                      visible={
-                        handTrackingReady
-                      }
-                      pinching={
-                        hands[0].isPinching
-                      }
+                ) : (
+                  <CameraView
+                    videoRef={videoRef}
+                    isActive={cameraReady}
+                  >
+                    <HandTracker
+                      hands={trackerHands}
+                      width={1280}
+                      height={720}
                     />
-                  )}
-                </CameraView>
-              )}
 
+                    {hands.length > 0 && (
+                      <HandCursor
+                        x={
+                          hands[0].indexTip.x
+                        }
+                        y={
+                          hands[0].indexTip.y
+                        }
+                        visible={
+                          handTrackingReady
+                        }
+                        pinching={
+                          hands[0].isPinching
+                        }
+                      />
+                    )}
+                  </CameraView>
+                )}
+              </div>
+
+              {/* HIDDEN CANVAS */}
               <canvas
                 ref={canvasRef}
                 className="hidden"
               />
 
-              <div className="mt-8 flex justify-center gap-4">
+              {/* CAMERA STATUS */}
+              {!capturedImage &&
+                !cameraReady &&
+                !error && (
+                  <p className="mt-4 text-center text-sm text-slate-400">
+                    Starting camera...
+                  </p>
+                )}
+
+              {!capturedImage &&
+                cameraReady &&
+                !handTrackingReady && (
+                  <p className="mt-4 text-center text-sm text-slate-400">
+                    Preparing hand tracking...
+                  </p>
+                )}
+
+              {/* CONTROLS */}
+              <div className="mt-5 flex justify-center sm:mt-8">
 
                 {!capturedImage ? (
                   <CaptureButton
@@ -350,15 +380,14 @@ function CameraPageContent() {
                     }
                   />
                 ) : uploading ? (
-                  <div className="text-center">
-                    <p className="text-xl font-bold text-cyan-400">
+                  <div className="px-4 text-center">
+                    <p className="text-lg font-bold text-cyan-400 sm:text-xl">
                       Uploading...
                     </p>
 
-                    <p className="mt-2 text-slate-400">
-                      Please wait while
-                      your image is being
-                      processed.
+                    <p className="mt-2 text-sm text-slate-400 sm:text-base">
+                      Please wait while your
+                      image is being processed.
                     </p>
                   </div>
                 ) : (
@@ -377,6 +406,17 @@ function CameraPageContent() {
           )}
 
         </div>
+
+        {/* MOBILE HELP */}
+        {!capturedImage &&
+          !error && (
+            <p className="mx-auto mt-4 max-w-md text-center text-xs leading-5 text-slate-500 sm:text-sm">
+              Position your hands in front of
+              the camera and keep them visible
+              while SOLVORA tracks your movements.
+            </p>
+          )}
+
       </div>
     </main>
   );
@@ -386,13 +426,13 @@ export default function CameraPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
           <div className="text-center">
-            <p className="text-xl font-bold text-cyan-400">
+            <p className="text-lg font-bold text-cyan-400 sm:text-xl">
               Loading camera...
             </p>
 
-            <p className="mt-2 text-slate-400">
+            <p className="mt-2 text-sm text-slate-400 sm:text-base">
               Preparing SOLVORA camera...
             </p>
           </div>

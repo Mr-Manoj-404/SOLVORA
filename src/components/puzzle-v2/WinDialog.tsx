@@ -35,7 +35,7 @@ export default function WinDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[500] flex items-center justify-center overflow-y-auto bg-black/60 px-3 py-4 backdrop-blur-sm sm:px-4 sm:py-6">
       <motion.div
         initial={{
           opacity: 0,
@@ -55,54 +55,57 @@ export default function WinDialog({
         className="
           w-full
           max-w-md
-          rounded-3xl
+          rounded-2xl
           border
           border-cyan-400/30
           bg-slate-950
-          p-8
+          p-5
           text-center
           shadow-2xl
+          sm:rounded-3xl
+          sm:p-8
         "
       >
-        <div className="text-5xl">
+        <div className="text-4xl sm:text-5xl">
           🎉
         </div>
 
-        <h2 className="mt-3 text-3xl font-bold text-cyan-400">
+        <h2 className="mt-3 text-2xl font-bold text-cyan-400 sm:text-3xl">
           Puzzle Solved!
         </h2>
 
-        <p className="mt-2 text-slate-400">
+        <p className="mt-2 text-sm text-slate-400 sm:text-base">
           Excellent work!
         </p>
 
-        <div className="mt-8 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-slate-900 p-4">
-            <p className="text-xs uppercase text-slate-500">
+        {/* RESULTS */}
+        <div className="mt-6 grid grid-cols-3 gap-2 sm:mt-8 sm:gap-3">
+          <div className="rounded-xl bg-slate-900 p-3 sm:rounded-2xl sm:p-4">
+            <p className="text-[10px] uppercase text-slate-500 sm:text-xs">
               Score
             </p>
 
-            <p className="mt-1 text-2xl font-bold text-white">
+            <p className="mt-1 text-xl font-bold text-white sm:text-2xl">
               {score}
             </p>
           </div>
 
-          <div className="rounded-2xl bg-slate-900 p-4">
-            <p className="text-xs uppercase text-slate-500">
+          <div className="rounded-xl bg-slate-900 p-3 sm:rounded-2xl sm:p-4">
+            <p className="text-[10px] uppercase text-slate-500 sm:text-xs">
               Moves
             </p>
 
-            <p className="mt-1 text-2xl font-bold text-white">
+            <p className="mt-1 text-xl font-bold text-white sm:text-2xl">
               {moves}
             </p>
           </div>
 
-          <div className="rounded-2xl bg-slate-900 p-4">
-            <p className="text-xs uppercase text-slate-500">
+          <div className="rounded-xl bg-slate-900 p-3 sm:rounded-2xl sm:p-4">
+            <p className="text-[10px] uppercase text-slate-500 sm:text-xs">
               Time
             </p>
 
-            <p className="mt-1 text-2xl font-bold text-white">
+            <p className="mt-1 text-xl font-bold text-white sm:text-2xl">
               {formatTime(seconds)}
             </p>
           </div>
@@ -113,17 +116,20 @@ export default function WinDialog({
           type="button"
           onClick={onPlayAgain}
           className="
-            mt-8
+            mt-6
+            min-h-12
             w-full
             rounded-xl
             bg-cyan-500
             px-6
             py-3
+            text-base
             font-semibold
             text-slate-950
             transition
             hover:bg-cyan-400
             active:scale-[0.98]
+            sm:mt-8
           "
         >
           Play Again
@@ -135,6 +141,7 @@ export default function WinDialog({
           onClick={handleExit}
           className="
             mt-3
+            min-h-12
             w-full
             rounded-xl
             border
@@ -142,6 +149,7 @@ export default function WinDialog({
             bg-slate-900
             px-6
             py-3
+            text-base
             font-semibold
             text-slate-300
             transition
